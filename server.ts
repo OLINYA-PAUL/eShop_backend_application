@@ -4,6 +4,7 @@ if (process.env.NODE_ENV !== "production") {
     path: "config/.env",
   });
 }
+
 import { connectDbUrl } from "./DB/DB";
 import app from "./app";
 import { cloudinaryConfig } from "./utils/cloudinary";
@@ -14,7 +15,7 @@ process.on("uncaughtException", (err: any) => {
   process.exit(1);
 });
 
-cloudinaryConfig();
+console.log(cloudinaryConfig());
 const server = app.listen(process.env.PORT, async () => {
   console.log(`Server is listening to ${process.env.PORT}`);
   try {
