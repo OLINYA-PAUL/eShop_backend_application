@@ -10,7 +10,7 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { globalErrorMiddleWare } from "./middleware/error";
-import fileUpload from "express-fileupload";
+import user from "./controller/user";
 
 // Initialize Express App
 const app = express();
@@ -18,15 +18,14 @@ const app = express();
 // Middlewares
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
-app.use(fileUpload({ useTempFiles: true }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-let allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins?.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -41,26 +40,22 @@ app.use(
 );
 
 // Routes
-app.get("/test", (req: Request, res: Response) => {
-  res.status(200).json({ success: true, message: "User created successfully" });
-});
+app.use("/api/v1/user", user); // Modularizing user routes
 
-// app.use("/api/v1");
-
-//Home
-
+// Home Route
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
-    Success: true,
-    Message: `$ You are on home page: Your IP address ${req.ips}`,
+    success: true,
+    message: `You are on the home page`,
   });
 });
 
 // 404 Route Handler
 app.get("*", (req: Request, res: Response) => {
+  console.log(`404 error at: ${req.originalUrl}`);
   res.status(404).json({
-    error: false,
-    errorMessage: `The origin you searched (${req.originalUrl}) does not exsit.`,
+    error: true,
+    errorMessage: `The origin you searched (${req.originalUrl}) does not exist.`,
   });
 });
 

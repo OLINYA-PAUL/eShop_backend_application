@@ -12,9 +12,12 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
+    "@types/ejs": "^3.1.5",
+    "@types/express": "^5.0.0",
     "@types/express-fileupload": "^1.5.1",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.7",
+    "@types/nodemailer": "^6.4.17",
     "cookie-parser": "^1.4.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
@@ -26,10 +29,11 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "e": "^0.2.33",
+    "ejs": "^3.1.10",
     "express": "^4.21.2",
-    "express-fileupload": "^1.5.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
+    "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9"
   }
 }
