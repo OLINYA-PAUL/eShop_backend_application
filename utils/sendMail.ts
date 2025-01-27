@@ -1,8 +1,4 @@
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config({
-    path: "config/.env",
-  });
-}
+console.log("ENV", require("dotenv").config());
 
 import nodeMailer, { Transporter } from "nodemailer";
 import EJS from "ejs";
@@ -21,8 +17,8 @@ export const sendMail = async (option: EmailOptions) => {
     port: parseInt(process.env.SMPT_PORT || "587"),
     service: process.env.SMPT_SERVICE,
     auth: {
-      user: process.env.SMTP_MAIL,
-      pass: process.env.SMTP_PASSWORD,
+      user: "24hoursmotivationalspeech@gmail.com",
+      pass: "drlcsvvchjhhzvkd",
     },
     logger: true,
     debug: true,

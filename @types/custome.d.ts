@@ -2,7 +2,7 @@ import { Request } from "express";
 import { IUser } from "../model/user";
 
 declare global {
-  namespace Epress {
+  namespace Express {
     interface Request {
       user?: IUser;
     }

@@ -31,6 +31,7 @@ export interface IUser extends Document {
 
   // Method definitions
   getJwtToken(): string;
+  rememberMeJwtToken():string;
   comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -98,6 +99,13 @@ userSchema.pre<IUser>("save", async function (next) {
 userSchema.methods.getJwtToken = function (): string {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY as string, {
     expiresIn: "1h",
+  });
+};
+
+// Method to generate JWT
+userSchema.methods.rememberMeJwtToken = function (): string {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY as string, {
+    expiresIn: "7d",
   });
 };
 
