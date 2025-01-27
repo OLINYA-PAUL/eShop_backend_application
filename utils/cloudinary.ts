@@ -1,8 +1,4 @@
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config({
-    path: "config/.env",
-  });
-}
+require("dotenv").config();
 
 import { v2 as cloudinary } from "cloudinary";
 

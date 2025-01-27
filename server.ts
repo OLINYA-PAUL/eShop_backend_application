@@ -1,9 +1,5 @@
 // Environment Configuration
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config({
-    path: "config/.env",
-  });
-}
+require("dotenv").config();
 
 import { connectDbUrl } from "./DB/DB";
 import app from "./app";
@@ -22,7 +18,7 @@ const server = app.listen(process.env.PORT, async () => {
     if (process.env.MONGODB_URL)
       await connectDbUrl(process.env.MONGODB_URL).then((data: any) => {
         console.log(
-          `Server is listening to ${process.env.PORT} - ${data.connection.host}`
+          `Server is listening to ${process.env.PORT} - ${data?.connection.host}`
         );
       });
   } catch (error) {

@@ -1,9 +1,5 @@
 // Environment Configuration
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config({
-    path: "config/.env",
-  });
-}
+require("dotenv").config();
 
 // Imports
 import express, { NextFunction, Request, Response } from "express";
