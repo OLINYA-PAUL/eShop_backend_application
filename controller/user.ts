@@ -5,7 +5,7 @@ import { catchAsyncErroMiddleWare } from "../middleware/catchAsyncErrors";
 import errorHandler from "../utils/errorHandler";
 import User from "../model/user";
 import cloudinary from "cloudinary";
-import jwt from "jsonwebtoken";
+import jwt, { Secret } from "jsonwebtoken";
 const router = express.Router();
 import { IUser } from "../model/user";
 import { sendMail } from "../utils/sendMail";
@@ -13,6 +13,7 @@ import EJS from "ejs";
 import path from "path";
 import { sendToken } from "../utils/jwtToken";
 import { isAuthenticated } from "../middleware/auth";
+import { PasswordReset } from "../DB/passwordReset";
 
 interface CreateUserRequestBody {
   name: string;
@@ -163,7 +164,6 @@ router.post(
 
 router.post(
   "/request-password-reset",
-  isAuthenticated,
   catchAsyncErroMiddleWare(
     async (req: Request, res: Response, next: NextFunction) => {
       const { email } = req.body;
@@ -172,39 +172,159 @@ router.post(
       const user = await User.findOne({ email });
       if (!user) return next(new errorHandler("User not found", 400));
 
-      // Generate reset token
-      const resetToken = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET_KEY as string,
-        { expiresIn: "1h" }
-      );
+      // Generate a new activation code (simple random number for now)
+      const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-      // Send reset email with token link
-      const resetLink = `http://localhost:8000/reset-password/${resetToken}`;
-      const data = { resetLink };
+      // Set expiration time (e.g., 1 hour)
+      const expiresAt = Date.now() + 3600000; // 1 hour expiration
 
-      await EJS.renderFile(
-        path.join(__dirname, "../mails/reset-password-mail.ejs"),
-        data
-      );
-      try {
-        await sendMail({
-          email,
-          subject: "Password Reset Request",
-          template: "reset-password-mail.ejs",
-          data,
-        });
-      } catch (error: any) {
-        return next(new errorHandler(error.message, 400));
-      }
+      // Store the activation code and expiration time in PasswordReset model
+      await PasswordReset.create({
+        userId: user._id,
+        activationCode,
+        expiresAt,
+      });
+
+      // Send email with the activation code (could use a template)
+      const data = { activationCode };
+      await sendMail({
+        email,
+        subject: "Password Reset Request",
+        template: "reset-password-mail.ejs", // Template you use to send the email
+        data,
+      });
 
       res.status(200).json({
         success: true,
-        message: "Password reset link sent to your email.",
+        message: "OTP sent to your email.",
       });
     }
   )
 );
+
+// router.post(
+//   "/request-password-reset",
+//   isAuthenticated,
+//   catchAsyncErroMiddleWare(
+//     async (req: Request, res: Response, next: NextFunction) => {
+//       const { email } = req.body;
+
+//       // Find user by email
+//       const user = await User.findOne({ email });
+//       if (!user) return next(new errorHandler("User not found", 400));
+//       // Generate reset token
+
+//       const { token, activationCode: resetLink } = createActivationToken(user);
+
+//       const data = { resetLink };
+
+//       await EJS.renderFile(
+//         path.join(__dirname, "../mails/reset-password-mail.ejs"),
+//         data
+//       );
+//       try {
+//         await sendMail({
+//           email,
+//           subject: "Password Reset Request",
+//           template: "reset-password-mail.ejs",
+//           data,
+//         });
+//       } catch (error: any) {
+//         return next(new errorHandler(error.message, 400));
+//       }
+
+//       res.status(200).json({
+//         success: true,
+//         message: "OTP sent to your email.",
+//         token,
+//       });
+//     }
+//   )
+// );
+
+// interface activationToken {
+//   token: string;
+//   activationCode: string;
+// }
+
+// const createActivationToken = (user: any): activationToken => {
+//   const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+//   const token = jwt.sign(
+//     { userId: user?._id, activationCode },
+//     process.env.JWT_SECRET_KEY as Secret,
+//     { expiresIn: "1h" }
+//   );
+
+//   return { token, activationCode };
+// };
+
+// router.post(
+//   "/reset-password",
+//   isAuthenticated,
+//   catchAsyncErroMiddleWare(
+//     async (req: Request, res: Response, next: NextFunction) => {
+//       try {
+//         const { tokenActivationCode, newPassword } = req.body as {
+//           tokenActivationCode: string;
+//           newPassword: string;
+//         };
+
+//         if (!tokenActivationCode || !newPassword) {
+//           return next(
+//             new errorHandler("Token and new password are required", 400)
+//           );
+//         }
+
+//         console.log(" Token sent drom fronend:", tokenActivationCode);
+
+//         // Verify the reset token using the correct secret key
+//         const decoded: { userId: string; activationCode: string } = jwt.verify(
+//           tokenActivationCode,
+//           process.env.JWT_SECRET_KEY as string
+//         ) as { userId: string; activationCode: string };
+
+//         if (tokenActivationCode !== decoded.activationCode) {
+//           return next(
+//             new errorHandler("invalide activation code entered", 400)
+//           ); // Catch and forward email sending error
+//         }
+
+//         console.log("Decoded Token:", decoded);
+//         if (!decoded.userId) {
+//           return next(new errorHandler("Invalid token", 400));
+//         }
+
+//         // Find the user by ID
+//         const user = await User.findById(decoded.userId);
+//         if (!user) {
+//           return next(new errorHandler("User not found", 400));
+//         }
+
+//         if (newPassword === user.password) {
+//           return next(
+//             new errorHandler(
+//               "New password cannot be the same as the old one",
+//               400
+//             )
+//           );
+//         }
+
+//         // Update the password
+//         user.password = newPassword;
+//         await user.save();
+
+//         res.status(200).json({
+//           success: true,
+//           message: "Password reset successfully",
+//         });
+//       } catch (err: any) {
+//         console.log(err);
+//         return next(new errorHandler(err.message, 400));
+//       }
+//     }
+//   )
+// );
 
 router.post(
   "/reset-password",
@@ -212,35 +332,41 @@ router.post(
   catchAsyncErroMiddleWare(
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { token, newPassword } = req.body;
+        const { OTP, newPassword } = req.body as {
+          OTP: string;
+          newPassword: string;
+        };
 
-        // Validate input
-        if (!token || !newPassword) {
+        if (!OTP || !newPassword) {
           return next(
-            new errorHandler("Token and new password are required", 400)
+            new errorHandler(
+              "Activation code and new password are required",
+              400
+            )
           );
         }
 
-        // Verify the reset token
-        const decoded: any = jwt.verify(
-          token,
-          process.env.JWT_SECRET_KEY as string
-        );
+        console.log("Token sent from frontend:", OTP);
 
-        // Ensure decoded contains the userId and use it to find the user
+        const resetRecord = await PasswordReset.findOne({
+          activationCode: OTP,
+        });
 
-        if (!decoded.userId) {
-          return next(new errorHandler("Invalid token", 400));
+        if (!resetRecord) {
+          return next(
+            new errorHandler("Invalid or expired activation code", 400)
+          );
         }
 
-        // Find the user by ID
-        const user = await User.findById(decoded.userId);
+        if (Date.now() > resetRecord.expiresAt) {
+          return next(new errorHandler("Activation code has expired", 400));
+        }
+
+        const user = await User.findById(resetRecord.userId);
         if (!user) {
           return next(new errorHandler("User not found", 400));
         }
 
-        // Check if the new password is the same as the old one
-        // const isSamePassword = await user.comparePassword(newPassword);
         if (newPassword === user.password) {
           return next(
             new errorHandler(
@@ -250,12 +376,10 @@ router.post(
           );
         }
 
-        // Update the password
         user.password = newPassword;
         await user.save();
 
-        // Send token and success response
-        sendToken(user, 200, res, next);
+        await PasswordReset.deleteOne({ _id: resetRecord._id });
 
         res.status(200).json({
           success: true,
